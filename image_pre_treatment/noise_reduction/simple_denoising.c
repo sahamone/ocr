@@ -58,21 +58,31 @@ void PRT_SimpleDenoising(SDL_Surface *surface)
 
 	for (long pixel_index = 0; pixel_index < pixel_count; pixel_index++)
 	{
-		SDL_GetRGB(pixels[pixel_index], surface->format, &color, &color, &color);
+		SDL_GetRGB(pixels[pixel_index],
+				surface->format, &color, &color, &color);
 		new_pixels[pixel_index] = pixels[pixel_index];
-		if (!PixelIsOnSide(pixel_index, W, H) && color == IS_WHITE && WhiteNeighboursCount(pixel_index, surface) <= 1)
+		if (!PixelIsOnSide(pixel_index, W, H) &&
+				color == IS_WHITE &&
+				WhiteNeighboursCount(pixel_index, surface) <= 1)
 		{
-			new_pixels[pixel_index] = SDL_MapRGB(surface->format, 0, 0, 0);
+			new_pixels[pixel_index] = SDL_MapRGB(surface->format,
+					0, 0, 0);
 			continue;
 		}
-		if (!PixelIsOnSideRange4(pixel_index, W, H) && color ==  255)
+		if (!PixelIsOnSideRange4(pixel_index, W, H) &&
+				color ==  255)
 		{
-			Patterns_ReplaceLosange(surface, pixel_index, 1);
-			Patterns_ReplaceBlob(surface, pixel_index);
+			Patterns_ReplaceLosange(surface,
+					pixel_index, 1);
+			Patterns_ReplaceBlob(surface,
+					pixel_index);
 		}
-		//if (!PixelIsOnSide(pixel_index, W, H) && color == IS_WHITE && WhiteNeighboursCount(pixel_index, surface) >= 8)
+		//if (!PixelIsOnSide(pixel_index, W, H) &&
+		//color == IS_WHITE &&
+		//WhiteNeighboursCount(pixel_index, surface) >= 8)
 		//{
-		//	new_pixels[pixel_index] = SDL_MapRGB(surface->format, 255, 255, 255);
+		//	new_pixels[pixel_index] = SDL_MapRGB(surface->format,
+		//	255, 255, 255);
 		//}
 	}
 	

@@ -3,7 +3,10 @@
 //Main file of the pre-treatment part of the OCR project
 int main(int argc, char *argv[]) {
     if (argc != 3) {
-        errx(EXIT_FAILURE, "Invalid number of arguments!\n./pre-treatment <all/rotate/blackwhite/grayscale/> <input_image_path>\n");
+        errx(EXIT_FAILURE, "Invalid number of arguments!\n
+				./pre-treatment 
+				<all/rotate/blackwhite/grayscale/>
+				<input_image_path>\n");
     }
 
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {

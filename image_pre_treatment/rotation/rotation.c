@@ -107,14 +107,19 @@ void rotate(SDL_Surface *surface, int angle)
 	if (LOG_LEVEL > 1)	{printf("Radian angle: %f\n", newAngle);}
 
 	unsigned int initW = surface->w,	initH = surface->h;
-	unsigned int newW = initH * absf(sin(newAngle)) + initW * absf(cos(newAngle));
-	unsigned int newH = initH + absf(cos(newAngle)) + initW * absf(sin(newAngle));
+	unsigned int newW = initH * absf(sin(newAngle)) +
+		initW * absf(cos(newAngle));
+	unsigned int newH = initH + absf(cos(newAngle)) +
+		initW * absf(sin(newAngle));
 	
 	if (LOG_LEVEL > 1){
-		printf("Initial width : %i, initial height : %i\n", initW, initH);
-		printf("New width : %i, new height : %i\n", newW, newH);}
+		printf("Initial width : %i, initial height : %i\n",
+				initW, initH);
+		printf("New width : %i, new height : %i\n",
+				newW, newH);}
 
-	SDL_Surface* newOne = SDL_CreateRGBSurface(0,newW,newH,32,0,0,0,0);
+	SDL_Surface* newOne = SDL_CreateRGBSurface(0,
+			newW,newH,32,0,0,0,0);
 
 	Uint32* pixelDepart = surface->pixels;
 	Uint32* pixelPtr = newOne->pixels;
@@ -122,10 +127,21 @@ void rotate(SDL_Surface *surface, int angle)
 
 	for(unsigned long pixelNb=0; pixelNb < pixelCount; pixelNb++)
 	{	
-		int x_depart = getXFromPixelNb(pixelNb, newW)*cos(newAngle) + getYFromPixelNb(pixelNb, newW, newH) * sin(newAngle);
-        int y_depart = -getXFromPixelNb(pixelNb, newW)*sin(newAngle) + getYFromPixelNb(pixelNb, newW, newH) * cos(newAngle);
+		int x_depart = 
+			getXFromPixelNb(pixelNb, newW) *
+			cos(newAngle) 
+			+
+			getYFromPixelNb(pixelNb, newW, newH) *
+			sin(newAngle);
+        int y_depart = 
+			-getXFromPixelNb(pixelNb, newW)*
+			sin(newAngle) 
+			+
+			getYFromPixelNb(pixelNb, newW, newH) *
+			cos(newAngle);
 	
-		long pixelDepartNb = getPixelNbFromXY(x_depart, y_depart, initW, initH);
+		long pixelDepartNb = getPixelNbFromXY(x_depart, y_depart,
+				initW, initH);
 		
 		if (pixelDepartNb == NOT_IN_IMAGE) 
 		{

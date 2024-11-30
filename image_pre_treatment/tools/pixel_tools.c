@@ -1,8 +1,12 @@
 #include "pixel_tools.h"
-// This file contain all the tools function for letter-detection script detailed under
+// This file contain all the tools function
+// for letter-detection script detailed under
 
 /*
-This function return the rgb value of a specific pixel according to the surface given in parameter. RGB are given by ref
+This function return the rgb value
+of a specific pixel according to 
+the surface given in parameter.
+RGB are given by ref
 @param surface surface to process
 @param x x coordinate of the pixel
 @param y y coordinate of the pixel
@@ -13,13 +17,17 @@ Uint32 GetPixelColor(SDL_Surface *surface, int x, int y) {
 }
 
 /*
-This function set the rgb value of a specific pixel according to the surface given in parameter
+This function set the rgb value of
+a specific pixel according to 
+the surface given in parameter
 @param surface surface to process
 @param x x coordinate of the pixel
 @param y y coordinate of the pixel
 @param color color to set
 */
-void SetPixelColor(SDL_Surface *surface, int x, int y, Uint32 r, Uint32 g, Uint32 b) {
+void SetPixelColor(SDL_Surface *surface,
+        int x, int y, Uint32 r, Uint32 g, Uint32 b) {
+
     Uint32 *pixels = (Uint32 *)surface->pixels;
     pixels[(y * surface->w) + x] = SDL_MapRGB(surface->format, r, g, b);
 }
@@ -42,7 +50,11 @@ void SetPixelColor(SDL_Surface *surface, int x, int y, Uint32 r, Uint32 g, Uint3
 long PixelIsOnSide(long pixel_index, long width, long height)
 {
 	long pixel_col = pixel_index%width;
-	return (pixel_col <= 1) || (pixel_index <= width) || (pixel_index >= (width * (height-1)));
+	
+    return 
+        (pixel_col <= 1) ||
+        (pixel_index <= width) ||
+        (pixel_index >= (width * (height-1)));
 }
 
 
@@ -63,5 +75,10 @@ long PixelIsOnSide(long pixel_index, long width, long height)
 long PixelIsOnSideRange4(long pixel_index, long width, long height)
 {
 	long pixel_col = pixel_index%width;
-	return (pixel_col <= 3) || (pixel_col + 4 >= width) || (pixel_index <= width*4) || (pixel_index >= (width * (height-4)));
+	
+    return 
+        (pixel_col <= 3) ||
+        (pixel_col + 4 >= width) ||
+        (pixel_index <= width*4) ||
+        (pixel_index >= (width * (height-4)));
 }
