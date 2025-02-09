@@ -1,8 +1,8 @@
 #include "main.h"
 #include <stdio.h>
+#include <gtk/gtk.h>
 
 #define BUTTON_COUNT 8
-
 
 typedef struct {
     GtkWidget *imageWidget;
@@ -26,10 +26,8 @@ const char* buttonLabels[BUTTON_COUNT] =
     "HELP"
 };
 
-
-
 GtkWidget* imageWidget;
-GtkWidget* searchEntry;
+GtkWidget* imagePathLabel;
 
 gboolean update_gui_after_detection(gpointer data)
 {
@@ -57,45 +55,42 @@ gpointer detection_thread_func(gpointer data)
 
 void quit_button() 
 {
-    remove("output_path_PRT");
+    if (displayedimage && displayedimage != output_path_PRT) {
+        g_free(displayedimage);
+    }
+    remove(output_path_PRT);
     gtk_main_quit();
 }
 
 void image_button(GtkWidget* widget, gpointer data) 
 {
-    const char* filename = gtk_entry_get_text(GTK_ENTRY(searchEntry));
+    const char* filename = displayedimage;
     const char* buttonLabel = (const char*)data;    
    
+    SDL_Surface* backgroundImage = NULL;
+
+    if (!filename) {
+        GtkWidget *errorDialog = gtk_message_dialog_new(GTK_WINDOW(window),
+                GTK_DIALOG_MODAL,
+                GTK_MESSAGE_ERROR,
+                GTK_BUTTONS_OK,
+                "No image loaded. Please load an image first.");
+        gtk_dialog_run(GTK_DIALOG(errorDialog));
+        gtk_widget_destroy(errorDialog);
+        return;
+    }
+
     if (strcmp(buttonLabel, "Contrast Boost") == 0)
     {
-        SDL_Surface* backgroundImage = IMG_Load(displayedimage);
-        
+        backgroundImage = IMG_Load(displayedimage);
         if (backgroundImage) 
         {
             run_pretreatment(&backgroundImage, 6, 0);
-            
-            if (backgroundImage) 
-            {
-                printf("SDL surface saved to: %s\n", output_path_PRT);
-                displayedimage = (char *)output_path_PRT;
-                gtk_image_set_from_file(
-                        GTK_IMAGE(imageWidget),
-                        displayedimage);
-                g_print("Displayed image updated to: ");
-            } 
-            else 
-            {
-                g_print("Failed to save SDL surface: %s\n", SDL_GetError());
-            }
-
+            displayedimage = (char *)output_path_PRT;
+            gtk_image_set_from_file(GTK_IMAGE(imageWidget), displayedimage);
             SDL_FreeSurface(backgroundImage);
-        } 
-        else 
-        {
-            g_print("Failed to load image for automatic rotation");
         }
     }
-
     else if (strcmp(buttonLabel, "Pretreatment") == 0) 
     {
         GtkWidget* dialog = 
@@ -119,38 +114,17 @@ void image_button(GtkWidget* widget, gpointer data)
 
         if (treatmentLevel > 0) 
         {
-            
-            SDL_Surface* backgroundImage = IMG_Load("data/post_PRT.png");
-            if (backgroundImage==NULL) backgroundImage=IMG_Load(filename);
+            backgroundImage = IMG_Load(filename);
+            if (!backgroundImage) {
+                backgroundImage = IMG_Load("data/post_PRT.png");
+            }
             
             if (backgroundImage) 
             {
-                printf(".png to SDL surface loaded successfully\n");
-
-                run_pretreatment(&backgroundImage,
-                        treatmentLevel, 0); 
-
-                if (backgroundImage) 
-                {
-                    printf("SDL surface saved to: %s\n",
-                            output_path_PRT);
-                    displayedimage = (char *)output_path_PRT;
-                    gtk_image_set_from_file(
-                            GTK_IMAGE(imageWidget), displayedimage);
-                    g_print("Displayed image updated to: %s\n",
-                            displayedimage);
-                } 
-                else 
-                {
-                    g_print("Failed to save SDL surface: %s\n",
-                            SDL_GetError());
-                }
-
+                run_pretreatment(&backgroundImage, treatmentLevel, 0);
+                displayedimage = (char *)output_path_PRT;
+                gtk_image_set_from_file(GTK_IMAGE(imageWidget), displayedimage);
                 SDL_FreeSurface(backgroundImage);
-            } 
-            else 
-            {
-                g_print("Failed to load SDL surface from: %s\n", filename);
             }
         }
     }
@@ -402,7 +376,7 @@ void image_button(GtkWidget* widget, gpointer data)
 
            
             run_solver(2);
-	        run_draw((char*)filename);
+            run_draw((char*)filename);
 
             
 
@@ -418,39 +392,44 @@ void image_button(GtkWidget* widget, gpointer data)
 
 void load_button() 
 {
-    const char* filename = gtk_entry_get_text(GTK_ENTRY(searchEntry));
-    if(strlen(filename) > 4 && 
-       strcmp(filename + strlen(filename) - 4, ".png") == 0)
+    GtkWidget *dialog = gtk_file_chooser_dialog_new(
+        "Open File",
+        GTK_WINDOW(window),
+        GTK_FILE_CHOOSER_ACTION_OPEN,
+        "_Cancel", GTK_RESPONSE_CANCEL,
+        "_Open", GTK_RESPONSE_ACCEPT,
+        NULL);
+
+    if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
     {
-        if (g_file_test(filename, G_FILE_TEST_EXISTS))
+        char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+        if (filename)
         {
-            gtk_image_set_from_file(GTK_IMAGE(imageWidget), filename);
-            displayedimage = (char*)filename;
-            g_print("Loaded image: %s\n", filename);
-        }
-        else 
-        {
-            GtkWidget *errorDialog = 
-                gtk_message_dialog_new(GTK_WINDOW(window),
-                        GTK_DIALOG_MODAL,
-                        GTK_MESSAGE_ERROR,
-                        GTK_BUTTONS_OK,
-                        "File does not exist: %s", filename);
-            gtk_dialog_run(GTK_DIALOG(errorDialog));
-            gtk_widget_destroy(errorDialog);
-        }
-    }
-    else
-    {
-        GtkWidget *errorDialog =
-            gtk_message_dialog_new(GTK_WINDOW(window),
+            // Verify image can be loaded before setting it
+            SDL_Surface *test_surface = IMG_Load(filename);
+            if (test_surface) {
+                SDL_FreeSurface(test_surface);
+                if (displayedimage && displayedimage != output_path_PRT) {
+                    g_free(displayedimage);
+                }
+                displayedimage = g_strdup(filename);
+                gtk_image_set_from_file(GTK_IMAGE(imageWidget), displayedimage);
+                gtk_label_set_text(GTK_LABEL(imagePathLabel), displayedimage);
+            } else {
+                GtkWidget *errorDialog = gtk_message_dialog_new(
+                    GTK_WINDOW(window),
                     GTK_DIALOG_MODAL,
                     GTK_MESSAGE_ERROR,
                     GTK_BUTTONS_OK,
-                    "Invalid file type: %s", filename);
-        gtk_dialog_run(GTK_DIALOG(errorDialog));
-        gtk_widget_destroy(errorDialog);
+                    "Failed to load image: %s", filename);
+                gtk_dialog_run(GTK_DIALOG(errorDialog));
+                gtk_widget_destroy(errorDialog);
+            }
+            g_free(filename);
+        }
     }
+
+    gtk_widget_destroy(dialog);
 }
 
 int main(int argc, char* argv[])
@@ -503,10 +482,8 @@ int main(int argc, char* argv[])
     GtkWidget* searchBox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
     gtk_box_pack_start(GTK_BOX(mainBox), searchBox, FALSE, FALSE, 0);
 
-    searchEntry = gtk_entry_new();
-    gtk_entry_set_placeholder_text(GTK_ENTRY(searchEntry), 
-                                   "Enter image file (e.g., image.png)");
-    gtk_box_pack_start(GTK_BOX(searchBox), searchEntry, TRUE, TRUE, 0);
+    imagePathLabel = gtk_label_new("Please load an image.");
+    gtk_box_pack_start(GTK_BOX(searchBox), imagePathLabel, TRUE, TRUE, 0);
 
     GtkWidget* loadButton = gtk_button_new_with_label("Load");
     g_signal_connect(loadButton, "clicked",
